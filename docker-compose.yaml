@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  postgresql:
+    image: postgres:latest
+    container_name: postgresql
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin5896
+      - POSTGRES_DB=flask_db
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+  app:
+    build:
+      context: ./python-app
+      dockerfile: Dockerfile
+    container_name: my_app
+    ports:
+      - "5001:5001"
+    restart: always
+  prometheus:
+    build:
+      context: .
+      dockerfile: Dockerfile.prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    restart: always
+    depends_on:
+      - app
+
+  grafana:
+    build:
+      context: .
+      dockerfile: Dockerfile.grafana
+    container_name: grafana
+
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+
+    depends_on:
+      - prometheus
+    restart: always
